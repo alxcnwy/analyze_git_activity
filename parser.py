@@ -73,9 +73,23 @@ def aggregate_by_day(events: List[CommitEvent]) -> Dict[str, Dict[str, int]]:
 
 def build_timeseries(events: List[CommitEvent]) -> Dict:
     if not events:
-        return {"dates": [], "total": [], "authors": {}}
+        return {
+            "dates": [],
+            "total": [],
+            "authors": {},
+            "meta": {"last_commit": None, "author_totals": {}},
+        }
 
-    agg = aggregate_by_day(events)
+    # Ensure events are in chronological order so we can derive last commit.
+    events_sorted = sorted(events, key=lambda e: e.timestamp)
+
+    last_event = events_sorted[-1]
+    last_commit = {
+        "timestamp": last_event.timestamp.isoformat(),
+        "author": last_event.author,
+    }
+
+    agg = aggregate_by_day(events_sorted)
     per_day = agg["per_day"]
     per_author = agg["per_author"]
 
@@ -93,7 +107,11 @@ def build_timeseries(events: List[CommitEvent]) -> Dict:
     total = [per_day.get(d, 0) for d in dates]
 
     authors_series: Dict[str, List[int]] = {}
+    author_totals: Dict[str, int] = {}
     for author, counts in per_author.items():
         authors_series[author] = [counts.get(d, 0) for d in dates]
+        author_totals[author] = sum(counts.values())
 
-    return {"dates": dates, "total": total, "authors": authors_series}
+    meta = {"last_commit": last_commit, "author_totals": author_totals}
+
+    return {"dates": dates, "total": total, "authors": authors_series, "meta": meta}

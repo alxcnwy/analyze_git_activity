@@ -56,7 +56,7 @@ document.addEventListener("DOMContentLoaded", () => {
   fetch("/api/data")
     .then((res) => res.json())
     .then((data) => {
-      const { dates, total, authors } = data;
+      const { dates, total, authors, meta } = data;
 
       // Summary stats
       const totalCommits = total.reduce((sum, v) => sum + v, 0);
@@ -80,8 +80,110 @@ document.addEventListener("DOMContentLoaded", () => {
       );
       setText("statCommitsLast7Days", commitsLastWeek.toLocaleString());
 
+      // Last commit + top authors
+      const metaInfo = meta || {};
+      const lastCommit = metaInfo.last_commit || null;
+      const authorTotals = metaInfo.author_totals || {};
+
+      if (lastCommit && lastCommit.timestamp && lastCommit.author) {
+        const lastDate = new Date(lastCommit.timestamp);
+        const now = new Date();
+        const diffMs = now.getTime() - lastDate.getTime();
+        const diffMins = Math.floor(diffMs / 60000);
+        const days = Math.floor(diffMins / (60 * 24));
+        const hours = Math.floor((diffMins - days * 60 * 24) / 60);
+        const mins = diffMins - days * 60 * 24 - hours * 60;
+
+        const ageParts = [];
+        if (days) ageParts.push(`${days}d`);
+        if (hours || days) ageParts.push(`${hours}h`);
+        ageParts.push(`${mins}m`);
+        const ageLabel = `${ageParts.join("")} ago`;
+
+        setText("statLastCommitAuthor", lastCommit.author);
+        setText(
+          "statLastCommitWhen",
+          `${lastDate.toISOString().slice(0, 10)} (${ageLabel})`,
+        );
+      } else {
+        setText("statLastCommitAuthor", "–");
+        setText("statLastCommitWhen", "");
+      }
+
+      const topAuthors = Object.entries(authorTotals)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3);
+
+      topAuthors.forEach(([name, count], index) => {
+        const slot = index + 1;
+        const linkEl = document.getElementById(`topAuthor${slot}Name`);
+        const commitsEl = document.getElementById(`topAuthor${slot}Commits`);
+        if (!linkEl || !commitsEl) return;
+
+        if (!name) {
+          linkEl.textContent = "–";
+          linkEl.removeAttribute("href");
+          commitsEl.textContent = "";
+          return;
+        }
+
+        const profileUrl = `https://github.com/search?q=${encodeURIComponent(
+          name,
+        )}&type=users`;
+        linkEl.textContent = name;
+        linkEl.href = profileUrl;
+        linkEl.target = "_blank";
+        linkEl.rel = "noreferrer";
+        commitsEl.textContent = `${count.toLocaleString()} commits`;
+      });
+
+      const makeBrushable = (chart) => {
+        if (!chart || !chart.canvas || !chart.scales || !chart.scales.x) return;
+        const canvas = chart.canvas;
+        let isDragging = false;
+        let startValue = null;
+
+        const getXValue = (event) => {
+          const rect = canvas.getBoundingClientRect();
+          const x = event.clientX - rect.left;
+          const scale = chart.scales.x;
+          return scale.getValueForPixel(x);
+        };
+
+        canvas.addEventListener("mousedown", (e) => {
+          isDragging = true;
+          startValue = getXValue(e);
+        });
+
+        canvas.addEventListener("mouseup", (e) => {
+          if (!isDragging) return;
+          isDragging = false;
+          const endValue = getXValue(e);
+          if (startValue == null || endValue == null) return;
+
+          let min = startValue;
+          let max = endValue;
+          if (min > max) {
+            [min, max] = [max, min];
+          }
+          if (Math.abs(max - min) < 1) {
+            return;
+          }
+
+          chart.options.scales.x.min = min;
+          chart.options.scales.x.max = max;
+          chart.update();
+        });
+
+        canvas.addEventListener("dblclick", () => {
+          chart.options.scales.x.min = undefined;
+          chart.options.scales.x.max = undefined;
+          chart.update();
+        });
+      };
+
       const totalCtx = document.getElementById("totalChart").getContext("2d");
-      new Chart(totalCtx, {
+      const totalChart = new Chart(totalCtx, {
         type: "line",
         data: {
           labels: dates,
@@ -155,7 +257,7 @@ document.addEventListener("DOMContentLoaded", () => {
         };
       });
 
-      new Chart(authorCtx, {
+      const authorChart = new Chart(authorCtx, {
         type: "line",
         data: {
           labels: dates,
@@ -199,6 +301,8 @@ document.addEventListener("DOMContentLoaded", () => {
           },
         },
       });
+      makeBrushable(totalChart);
+      makeBrushable(authorChart);
 
       const focusSelect = document.getElementById("focusAuthorSelect");
       const focusAuthorNames = Object.keys(authors);
@@ -322,6 +426,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 },
               },
             });
+            makeBrushable(focusChart);
           } else {
             focusChart.data.labels = dates;
             focusChart.data.datasets[0].label = focusAuthor;
@@ -386,6 +491,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 },
               },
             });
+            makeBrushable(zeroChart);
           } else {
             zeroChart.data.labels = dates;
             zeroChart.data.datasets[0].data = zeroSeries;
