@@ -13,6 +13,46 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  // Repo switcher
+  const repoForm = document.getElementById("repoForm");
+  const repoInput = document.getElementById("repoInput");
+
+  if (repoForm && repoInput) {
+    repoForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const url = repoInput.value.trim();
+      if (!url) {
+        return;
+      }
+
+      fetch("/api/set_repo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      })
+        .then((res) =>
+          res.json().then((body) => ({
+            ok: res.ok,
+            body,
+          })),
+        )
+        .then(({ ok, body }) => {
+          if (!ok) {
+            const message = body && body.error ? body.error : "Failed to load repository";
+            // eslint-disable-next-line no-alert
+            alert(message);
+            return;
+          }
+          window.location.reload();
+        })
+        .catch((err) => {
+          console.error("Failed to set repo", err);
+          // eslint-disable-next-line no-alert
+          alert("Failed to load repository");
+        });
+    });
+  }
+
   fetch("/api/data")
     .then((res) => res.json())
     .then((data) => {
@@ -165,6 +205,50 @@ document.addEventListener("DOMContentLoaded", () => {
       let focusChart = null;
       let zeroChart = null;
 
+      const setFocusStat = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+      };
+
+      const computeFocusStats = (series) => {
+        const total = series.reduce((sum, v) => sum + v, 0);
+
+        let lastIdx = -1;
+        for (let i = series.length - 1; i >= 0; i -= 1) {
+          if (series[i] > 0) {
+            lastIdx = i;
+            break;
+          }
+        }
+        const lastDateStr = lastIdx >= 0 ? dates[lastIdx] : null;
+
+        let last7 = 0;
+        let thisMonth = 0;
+        if (dates.length > 0) {
+          const maxDate = new Date(dates[dates.length - 1]);
+          const weekAgo = new Date(maxDate);
+          weekAgo.setDate(maxDate.getDate() - 6);
+          const monthStart = new Date(maxDate.getFullYear(), maxDate.getMonth(), 1);
+
+          for (let i = 0; i < series.length; i += 1) {
+            const v = series[i];
+            if (v === 0) continue;
+            const d = new Date(dates[i]);
+            if (d >= weekAgo && d <= maxDate) {
+              last7 += v;
+            }
+            if (d >= monthStart && d <= maxDate) {
+              thisMonth += v;
+            }
+          }
+        }
+
+        setFocusStat("focusLastCommit", lastDateStr || "–");
+        setFocusStat("focusTotalCommits", total.toLocaleString());
+        setFocusStat("focusCommitsLast7Days", last7.toLocaleString());
+        setFocusStat("focusCommitsThisMonth", thisMonth.toLocaleString());
+      };
+
       if (focusSelect && focusAuthorNames.length > 0) {
         focusAuthorNames
           .slice()
@@ -181,6 +265,8 @@ document.addEventListener("DOMContentLoaded", () => {
           if (!series) {
             return;
           }
+
+          computeFocusStats(series);
 
           if (!focusChart) {
             const focusCtx = document.getElementById("focusAuthorChart").getContext("2d");
