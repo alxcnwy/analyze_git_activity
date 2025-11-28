@@ -28,8 +28,8 @@
         display: flex;
         flex-wrap: wrap;
         gap: 1rem;
-        margin-top: 1.5rem;
-        margin-bottom: 1.5rem;
+        margin-top: 1rem;
+        margin-bottom: 1rem;
       }
       .chart-container {
         background-color: #111827;
@@ -40,6 +40,66 @@
       .chart-half {
         flex: 1 1 0;
         min-width: 320px;
+      }
+      .summary-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-top: 1rem;
+        margin-bottom: 0.5rem;
+      }
+      .stat-card {
+        background-color: #111827;
+        border-radius: 0.75rem;
+        padding: 0.75rem 1rem;
+        min-width: 150px;
+      }
+      .stat-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #9ca3af;
+      }
+      .stat-value {
+        font-size: 1.25rem;
+        font-weight: 500;
+        margin-top: 0.15rem;
+      }
+      .stat-sub {
+        font-size: 0.75rem;
+        color: #6b7280;
+        margin-top: 0.15rem;
+      }
+      .tabs {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1rem;
+        border-bottom: 1px solid #111827;
+      }
+      .tab-button {
+        border: none;
+        background: transparent;
+        color: #9ca3af;
+        padding: 0.4rem 0.85rem;
+        font-size: 0.9rem;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        border-radius: 0.25rem 0.25rem 0 0;
+      }
+      .tab-button:hover {
+        color: #e5e7eb;
+      }
+      .tab-button.active {
+        color: #e5e7eb;
+        border-color: #3b82f6;
+        background-color: #020617;
+      }
+      .tab-content {
+        display: none;
+        margin-top: 1rem;
+      }
+      .tab-content.active {
+        display: block;
       }
       .focus-header {
         display: flex;
@@ -66,6 +126,17 @@
         outline: 2px solid #3b82f6;
         outline-offset: 1px;
       }
+      .chart-header {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 0.5rem;
+      }
+      .chart-caption {
+        font-size: 0.75rem;
+        color: #9ca3af;
+        margin: 0;
+      }
       canvas {
         max-width: 100%;
         height: 320px;
@@ -78,31 +149,63 @@
     <p>Repository: <code>{{ repo_name }}</code> (via <code>git log</code>).</p>
     {% endif %}
 
-    <div class="charts-row">
-      <div class="chart-container chart-half">
-        <h2>Total commits per day</h2>
-        <canvas id="totalChart"></canvas>
+    <div class="summary-row">
+      <div class="stat-card">
+        <div class="stat-label">Total commits</div>
+        <div class="stat-value" id="statTotalCommits">–</div>
       </div>
-
-      <div class="chart-container chart-half">
-        <h2>Commits per day by author</h2>
-        <canvas id="authorChart"></canvas>
+      <div class="stat-card">
+        <div class="stat-label">Authors</div>
+        <div class="stat-value" id="statAuthors">–</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Commits per author</div>
+        <div class="stat-value" id="statCommitsPerAuthor">–</div>
+        <div class="stat-sub" id="statCommitsPerAuthorSub"></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Commits in past 7 days</div>
+        <div class="stat-value" id="statCommitsLast7Days">–</div>
       </div>
     </div>
 
-    <div class="chart-container">
-      <div class="focus-header">
-        <h2>Focus author activity</h2>
-        <label class="focus-label">
-          Focus author
-          <select id="focusAuthorSelect">
-            <option value="">Select an author…</option>
-          </select>
-        </label>
+    <div class="tabs">
+      <button class="tab-button active" data-tab="overview">Overview</button>
+      <button class="tab-button" data-tab="focus">Focus author</button>
+    </div>
+
+    <div class="tab-content active" id="tab-overview">
+      <div class="charts-row">
+        <div class="chart-container chart-half">
+          <h2>Total commits per day</h2>
+          <canvas id="totalChart"></canvas>
+        </div>
+
+        <div class="chart-container chart-half">
+          <div class="chart-header">
+            <h2>Commits per day by author</h2>
+            <p class="chart-caption">Hover over a line to see the author.</p>
+          </div>
+          <canvas id="authorChart"></canvas>
+        </div>
       </div>
-      <canvas id="focusAuthorChart"></canvas>
-      <h2 style="margin-top: 1.5rem;">Days with 0 commits for focus author</h2>
-      <canvas id="focusAuthorZeroChart"></canvas>
+    </div>
+
+    <div class="tab-content" id="tab-focus">
+      <div class="chart-container">
+        <div class="focus-header">
+          <h2>Focus author activity</h2>
+          <label class="focus-label">
+            Focus author
+            <select id="focusAuthorSelect">
+              <option value="">Select an author…</option>
+            </select>
+          </label>
+        </div>
+        <canvas id="focusAuthorChart"></canvas>
+        <h2 style="margin-top: 1.5rem;">Days with 0 commits for focus author</h2>
+        <canvas id="focusAuthorZeroChart"></canvas>
+      </div>
     </div>
 
     <script src="/static/app.js"></script>

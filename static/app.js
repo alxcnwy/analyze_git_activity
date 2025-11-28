@@ -1,8 +1,44 @@
 document.addEventListener("DOMContentLoaded", () => {
+  // Tabs
+  const tabButtons = document.querySelectorAll(".tab-button");
+  const tabContents = document.querySelectorAll(".tab-content");
+
+  tabButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const tab = btn.dataset.tab;
+      tabButtons.forEach((b) => b.classList.toggle("active", b === btn));
+      tabContents.forEach((c) => {
+        c.classList.toggle("active", c.id === `tab-${tab}`);
+      });
+    });
+  });
+
   fetch("/api/data")
     .then((res) => res.json())
     .then((data) => {
       const { dates, total, authors } = data;
+
+      // Summary stats
+      const totalCommits = total.reduce((sum, v) => sum + v, 0);
+      const authorNamesAll = Object.keys(authors);
+      const authorCount = authorNamesAll.length;
+      const commitsPerAuthor = authorCount > 0 ? totalCommits / authorCount : 0;
+      const lastWeekTotals = total.slice(-7);
+      const commitsLastWeek = lastWeekTotals.reduce((sum, v) => sum + v, 0);
+
+      const setText = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+      };
+
+      setText("statTotalCommits", totalCommits.toLocaleString());
+      setText("statAuthors", authorCount.toLocaleString());
+      setText("statCommitsPerAuthor", commitsPerAuthor.toFixed(1));
+      setText(
+        "statCommitsPerAuthorSub",
+        authorCount ? `avg across ${authorCount} authors` : ""
+      );
+      setText("statCommitsLast7Days", commitsLastWeek.toLocaleString());
 
       const totalCtx = document.getElementById("totalChart").getContext("2d");
       new Chart(totalCtx, {
@@ -29,6 +65,8 @@ document.addEventListener("DOMContentLoaded", () => {
               },
               ticks: {
                 color: "#9ca3af",
+                maxRotation: 90,
+                minRotation: 90,
               },
               grid: {
                 color: "rgba(55, 65, 81, 0.5)",
@@ -50,9 +88,7 @@ document.addEventListener("DOMContentLoaded", () => {
           },
           plugins: {
             legend: {
-              labels: {
-                color: "#e5e7eb",
-              },
+              display: false,
             },
           },
         },
@@ -95,6 +131,8 @@ document.addEventListener("DOMContentLoaded", () => {
               },
               ticks: {
                 color: "#9ca3af",
+                maxRotation: 90,
+                minRotation: 90,
               },
               grid: {
                 color: "rgba(55, 65, 81, 0.5)",
@@ -116,9 +154,7 @@ document.addEventListener("DOMContentLoaded", () => {
           },
           plugins: {
             legend: {
-              labels: {
-                color: "#e5e7eb",
-              },
+              display: false,
             },
           },
         },
@@ -172,6 +208,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     },
                     ticks: {
                       color: "#9ca3af",
+                      maxRotation: 90,
+                      minRotation: 90,
                     },
                     grid: {
                       color: "rgba(55, 65, 81, 0.5)",
@@ -193,9 +231,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 },
                 plugins: {
                   legend: {
-                    labels: {
-                      color: "#e5e7eb",
-                    },
+                    display: false,
                   },
                 },
               },
@@ -234,6 +270,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     },
                     ticks: {
                       color: "#9ca3af",
+                      maxRotation: 90,
+                      minRotation: 90,
                     },
                     grid: {
                       color: "rgba(55, 65, 81, 0.5)",
@@ -257,9 +295,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 },
                 plugins: {
                   legend: {
-                    labels: {
-                      color: "#e5e7eb",
-                    },
+                    display: false,
                   },
                 },
               },
