@@ -7,8 +7,8 @@ Small Flask + Chart.js UI for visualising Git commit activity (by day and by aut
 ## Quick Start
 
 ```bash
-# 1. Clone this tool (replace <your-username> with your GitHub user)
-git clone https://github.com/<your-username>/analyze_git_activity.git
+# 1. Clone this tool
+git clone https://github.com/alxcnwy/analyze_git_activity.git
 cd analyze_git_activity
 
 # 2. (Optional) create and activate a virtualenv
