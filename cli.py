@@ -47,16 +47,18 @@ def main() -> None:
     args = parser.parse_args()
 
     tmp_repo_path: Path | None = None
+    repo_url: str | None = None
     if args.repo and _is_github_url(args.repo):
         tmp_repo_path = _clone_github_repo(args.repo)
         repo_path = tmp_repo_path
+        repo_url = args.repo
     else:
         repo_path = Path(args.repo) if args.repo else Path.cwd()
 
     if tmp_repo_path is not None:
         atexit.register(shutil.rmtree, tmp_repo_path, ignore_errors=True)
 
-    app = create_app(repo_path)
+    app = create_app(repo_path, repo_url=repo_url)
     app.run(debug=True, port=args.port)
 
 

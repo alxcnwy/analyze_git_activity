@@ -117,7 +117,7 @@
       .tabs {
         display: flex;
         gap: 0.5rem;
-        margin-top: 1rem;
+        margin-top: 0.75rem;
         border-bottom: 1px solid #111827;
       }
       .tab-button {
@@ -144,6 +144,40 @@
       }
       .tab-content.active {
         display: block;
+      }
+      .range-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        align-items: center;
+        margin-top: 0.5rem;
+      }
+      .range-label {
+        font-size: 0.8rem;
+        color: #9ca3af;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+      }
+      .range-input {
+        background-color: #020617;
+        border-radius: 9999px;
+        border: 1px solid #374151;
+        padding: 0.25rem 0.6rem;
+        color: #e5e7eb;
+        font-size: 0.8rem;
+      }
+      .range-button {
+        border-radius: 9999px;
+        border: 1px solid #374151;
+        padding: 0.25rem 0.8rem;
+        background-color: #020617;
+        color: #e5e7eb;
+        font-size: 0.8rem;
+        cursor: pointer;
+      }
+      .range-button:hover {
+        background-color: #111827;
       }
       .focus-header {
         display: flex;
@@ -214,7 +248,15 @@
         <h1>Commit Activity from Git</h1>
         {% if repo_name %}
         <p class="repo-line">
-          Repository: <code id="repoName">{{ repo_name }}</code> (via <code>git log</code>).
+          Repository:
+          {% if repo_url %}
+          <a id="repoLink" href="{{ repo_url }}" target="_blank" rel="noreferrer">
+            <code>{{ repo_name }}</code>
+          </a>
+          {% else %}
+          <code id="repoName">{{ repo_name }}</code>
+          {% endif %}
+          (via <code>git log</code>).
         </p>
         {% endif %}
       </div>
@@ -224,6 +266,7 @@
           id="repoInput"
           class="repo-input"
           placeholder="https://github.com/user/repo"
+          {% if repo_url %}value="{{ repo_url }}"{% endif %}
           aria-label="GitHub repository URL"
         />
         <button type="submit" class="repo-button">Load repo</button>
@@ -279,6 +322,18 @@
     <div class="tabs">
       <button class="tab-button active" data-tab="overview">Overview</button>
       <button class="tab-button" data-tab="focus">Focus author</button>
+    </div>
+
+    <div class="range-row">
+      <label class="range-label">
+        From
+        <input type="date" id="dateRangeStart" class="range-input" />
+      </label>
+      <label class="range-label">
+        To
+        <input type="date" id="dateRangeEnd" class="range-input" />
+      </label>
+      <button type="button" id="dateRangeReset" class="range-button">Reset</button>
     </div>
 
     <div class="tab-content active" id="tab-overview">

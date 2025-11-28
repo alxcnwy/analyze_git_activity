@@ -29,13 +29,14 @@ def _build_series(repo_path: Path) -> dict:
     return build_timeseries(events)
 
 
-def create_app(repo_path: Path | None = None) -> Flask:
+def create_app(repo_path: Path | None = None, repo_url: str | None = None) -> Flask:
     app = Flask(__name__)
 
     if repo_path is None:
         repo_path = Path.cwd()
 
     app.config["REPO_PATH"] = repo_path
+    app.config["REPO_URL"] = repo_url
     app.config["TMP_REPO_PATH"] = None
     app.config["SERIES"] = _build_series(repo_path)
 
@@ -43,7 +44,8 @@ def create_app(repo_path: Path | None = None) -> Flask:
     def index():
         repo = app.config.get("REPO_PATH")
         name = repo.name if isinstance(repo, Path) else None
-        return render_template("index.html", repo_name=name)
+        url = app.config.get("REPO_URL")
+        return render_template("index.html", repo_name=name, repo_url=url)
 
     @app.route("/api/data")
     def api_data():
@@ -69,9 +71,10 @@ def create_app(repo_path: Path | None = None) -> Flask:
             return jsonify({"error": str(exc)}), 400
 
         app.config["REPO_PATH"] = new_repo_path
+        app.config["REPO_URL"] = url
         app.config["TMP_REPO_PATH"] = new_repo_path
         app.config["SERIES"] = _build_series(new_repo_path)
 
-        return jsonify({"ok": True, "repo_name": new_repo_path.name})
+        return jsonify({"ok": True, "repo_name": new_repo_path.name, "repo_url": url})
 
     return app

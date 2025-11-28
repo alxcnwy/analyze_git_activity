@@ -16,6 +16,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // Repo switcher
   const repoForm = document.getElementById("repoForm");
   const repoInput = document.getElementById("repoInput");
+  const rangeStartInput = document.getElementById("dateRangeStart");
+  const rangeEndInput = document.getElementById("dateRangeEnd");
+  const rangeResetButton = document.getElementById("dateRangeReset");
 
   if (repoForm && repoInput) {
     repoForm.addEventListener("submit", (e) => {
@@ -57,6 +60,7 @@ document.addEventListener("DOMContentLoaded", () => {
     .then((res) => res.json())
     .then((data) => {
       const { dates, total, authors, meta } = data;
+      const allDates = dates;
 
       // Summary stats
       const totalCommits = total.reduce((sum, v) => sum + v, 0);
@@ -315,6 +319,75 @@ document.addEventListener("DOMContentLoaded", () => {
       makeBrushable(totalChart);
       makeBrushable(authorChart);
 
+      // Date range filter (applies to x-axis on all charts)
+      let currentRange = null;
+
+      const clampIndex = (dateStr, fallbackIndex) => {
+        if (!dateStr) return fallbackIndex;
+        const idx = allDates.indexOf(dateStr);
+        if (idx !== -1) return idx;
+        if (dateStr < allDates[0]) return 0;
+        if (dateStr > allDates[allDates.length - 1]) return allDates.length - 1;
+        return fallbackIndex;
+      };
+
+      const applyRangeToChart = (chart, minIndex, maxIndex) => {
+        if (!chart || !chart.options || !chart.options.scales || !chart.options.scales.x) return;
+        chart.options.scales.x.min = minIndex;
+        chart.options.scales.x.max = maxIndex;
+        chart.update();
+      };
+
+      const applyDateRange = () => {
+        if (!rangeStartInput || !rangeEndInput || !allDates.length) return;
+        const earliest = allDates[0];
+        const last = allDates[allDates.length - 1];
+        const today = new Date().toISOString().slice(0, 10);
+
+        const startStr = rangeStartInput.value || earliest;
+        const endStr = rangeEndInput.value || today;
+
+        let minIndex = clampIndex(startStr, 0);
+        let maxIndex = clampIndex(endStr, allDates.length - 1);
+        if (minIndex > maxIndex) {
+          [minIndex, maxIndex] = [maxIndex, minIndex];
+        }
+
+        currentRange = { min: minIndex, max: maxIndex };
+        applyRangeToChart(totalChart, minIndex, maxIndex);
+        applyRangeToChart(authorChart, minIndex, maxIndex);
+        applyRangeToChart(focusChart, minIndex, maxIndex);
+        applyRangeToChart(zeroChart, minIndex, maxIndex);
+      };
+
+      const initDateRangeControls = () => {
+        if (!rangeStartInput || !rangeEndInput) return;
+        if (!allDates.length) return;
+
+        const earliest = allDates[0];
+        const today = new Date().toISOString().slice(0, 10);
+
+        rangeStartInput.value = earliest;
+        rangeEndInput.value = today;
+
+        rangeStartInput.addEventListener("change", applyDateRange);
+        rangeEndInput.addEventListener("change", applyDateRange);
+
+        if (rangeResetButton) {
+          rangeResetButton.addEventListener("click", () => {
+            rangeStartInput.value = earliest;
+            rangeEndInput.value = today;
+            currentRange = null;
+            applyRangeToChart(totalChart, undefined, undefined);
+            applyRangeToChart(authorChart, undefined, undefined);
+            applyRangeToChart(focusChart, undefined, undefined);
+            applyRangeToChart(zeroChart, undefined, undefined);
+          });
+        }
+
+        applyDateRange();
+      };
+
       const focusSelect = document.getElementById("focusAuthorSelect");
       const focusAuthorNames = Object.keys(authors);
       let focusChart = null;
@@ -438,6 +511,9 @@ document.addEventListener("DOMContentLoaded", () => {
               },
             });
             makeBrushable(focusChart);
+            if (currentRange) {
+              applyRangeToChart(focusChart, currentRange.min, currentRange.max);
+            }
           } else {
             focusChart.data.labels = dates;
             focusChart.data.datasets[0].label = focusAuthor;
@@ -503,6 +579,9 @@ document.addEventListener("DOMContentLoaded", () => {
               },
             });
             makeBrushable(zeroChart);
+            if (currentRange) {
+              applyRangeToChart(zeroChart, currentRange.min, currentRange.max);
+            }
           } else {
             zeroChart.data.labels = dates;
             zeroChart.data.datasets[0].data = zeroSeries;
@@ -522,6 +601,8 @@ document.addEventListener("DOMContentLoaded", () => {
         focusSelect.value = defaultAuthor;
         makeFocusCharts(defaultAuthor);
       }
+
+      initDateRangeControls();
     })
     .catch((err) => {
       console.error("Failed to load data", err);
