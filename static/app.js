@@ -151,6 +151,13 @@ document.addEventListener("DOMContentLoaded", () => {
         };
 
         canvas.addEventListener("mousedown", (e) => {
+          const rect = canvas.getBoundingClientRect();
+          const y = e.clientY - rect.top;
+          const area = chart.chartArea;
+          // Only start brushing if the drag begins in the x-axis label area.
+          if (!area || y < area.bottom || y > area.bottom + 40) {
+            return;
+          }
           isDragging = true;
           startValue = getXValue(e);
         });
@@ -175,7 +182,7 @@ document.addEventListener("DOMContentLoaded", () => {
           chart.update();
         });
 
-        canvas.addEventListener("dblclick", () => {
+          canvas.addEventListener("dblclick", () => {
           chart.options.scales.x.min = undefined;
           chart.options.scales.x.max = undefined;
           chart.update();
@@ -265,6 +272,10 @@ document.addEventListener("DOMContentLoaded", () => {
         },
         options: {
           responsive: true,
+          interaction: {
+            mode: "nearest",
+            intersect: false,
+          },
           scales: {
             x: {
               title: {
