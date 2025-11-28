@@ -16,12 +16,8 @@ python -m venv .venv
 source .venv/bin/activate
 pip install flask
 
-# 3. Run it against a repo
-#    (a) Local repo on disk
-python cli.py /path/to/your/git/repo --port 5050
-
-#    (b) Public GitHub repo
-python cli.py https://github.com/user/repo.git --port 5050
+# 3. Run it against an example public GitHub repo
+python cli.py https://github.com/openai/codex --port 5050
 
 # 4. Open the UI in your browser
 open http://127.0.0.1:5050/
