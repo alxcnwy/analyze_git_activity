@@ -125,12 +125,12 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       const focusSelect = document.getElementById("focusAuthorSelect");
-      const authorNames = Object.keys(authors);
+      const focusAuthorNames = Object.keys(authors);
       let focusChart = null;
       let zeroChart = null;
 
-      if (focusSelect && authorNames.length > 0) {
-        authorNames
+      if (focusSelect && focusAuthorNames.length > 0) {
+        focusAuthorNames
           .slice()
           .sort((a, b) => a.localeCompare(b))
           .forEach((author) => {
@@ -279,7 +279,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         // Default to the first author in the sorted list
-        const defaultAuthor = authorNames.slice().sort((a, b) => a.localeCompare(b))[0];
+        const defaultAuthor = focusAuthorNames.slice().sort((a, b) => a.localeCompare(b))[0];
         focusSelect.value = defaultAuthor;
         makeFocusCharts(defaultAuthor);
       }
